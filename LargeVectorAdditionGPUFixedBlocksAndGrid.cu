@@ -66,9 +66,10 @@ __global__ void AdditionGPU(float *a, float *b, float *c, int n)
 	int maX= N/(blockDim.x * gridDim.x) +1 ;
 	for (int count= 0; count < maX ; count++ )
 	{
-		if(id < N)
+		int inner= count*blockDim.x * gridDim.x +id;
+		if(inner < N)
 		{
-			c[(count*blockDim.x * gridDim.x) +id] = a[(count*blockDim.x * gridDim.x) +id] + b[(count*blockDim.x * gridDim.x) +id];
+			c[inner] = a[inner] + b[inner];
 		}
 		
 	}
