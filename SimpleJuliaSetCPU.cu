@@ -11,7 +11,7 @@
 
 
 #define A  -0.824  //real
-#define B  -0.1711   //imaginary
+#define B  0.1587   //imaginary
 
 unsigned int window_width = 1024;
 unsigned int window_height = 1024;
@@ -86,7 +86,7 @@ int main(int argc, char** argv)
    	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_RGB | GLUT_SINGLE);
    	glutInitWindowSize(window_width, window_height);
-	glutCreateWindow("Fractals man, fractals.");
+	glutCreateWindow("Fractal man !!!!!!!!!!!!!!!!!!!!!!!");
    	glutDisplayFunc(display);
    	glutMainLoop();
 }
