@@ -70,8 +70,22 @@ __global__ void AdditionGPU(float *a, float *b, float *c, int n)
 		{
 			c[(count*blockDim.x * gridDim.x) +id] = a[(count*blockDim.x * gridDim.x) +id] + b[(count*blockDim.x * gridDim.x) +id];
 		}
+		
 	}
 }
+
+void errorCheck(const char *file, int line)
+{
+	cudaError_t error;
+	error = cudaGetLastError();
+
+	if(error != cudaSuccess)
+	{
+		printf("\n CUDA message = %s, File = %s, Line = %d\n", cudaGetErrorString(error), file, line);
+		exit(0);
+	}
+}
+
 
 int main()
 {
@@ -90,15 +104,19 @@ int main()
 	//Starting the timer
 	gettimeofday(&start, NULL);
 
-	//Copy Memory from CPU to GPU		
+	//Copy Memory from CPU to GPU
 	cudaMemcpyAsync(A_GPU, A_CPU, N*sizeof(float), cudaMemcpyHostToDevice);
+	errorCheck(__FILE__, __LINE__);
 	cudaMemcpyAsync(B_GPU, B_CPU, N*sizeof(float), cudaMemcpyHostToDevice);
+	errorCheck(__FILE__, __LINE__);
 	
 	//Calling the Kernel (GPU) function.	
 	AdditionGPU<<<GridSize,BlockSize>>>(A_GPU, B_GPU, C_GPU, N);
+	errorCheck(__FILE__, __LINE__);
 	
 	//Copy Memory from GPU to CPU	
 	cudaMemcpyAsync(C_CPU, C_GPU, N*sizeof(float), cudaMemcpyDeviceToHost);
+	errorCheck(__FILE__, __LINE__);
 
 	//Stopping the timer
 	gettimeofday(&end, NULL);
