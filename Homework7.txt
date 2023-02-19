@@ -42,11 +42,11 @@ void AllocateMemory()
 {					
 	//Allocate Device (GPU) Memory
 	cudaMalloc(&A_GPU,N*sizeof(float));
-	myCudaErrorCheck(__FILE__, __LINE__);
+	ErrorCheck(__FILE__, __LINE__);
 	cudaMalloc(&B_GPU,N*sizeof(float));
-	myCudaErrorCheck(__FILE__, __LINE__);
+	ErrorCheck(__FILE__, __LINE__);
 	cudaMalloc(&C_GPU,N*sizeof(float));
-	myCudaErrorCheck(__FILE__, __LINE__);
+	ErrorCheck(__FILE__, __LINE__);
 
 	//Allocate Host (CPU) Memory
 	A_CPU = (float*)malloc(N*sizeof(float));
@@ -70,7 +70,7 @@ void CleanUp()
 {
 	free(A_CPU); free(B_CPU);
 	cudaFree(A_GPU); cudaFree(B_GPU); cudaFree(C_GPU);
-	myCudaErrorCheck(__FILE__, __LINE__);
+	ErrorCheck(__FILE__, __LINE__);
 }
 
 //This is the kernel. It is the function that will run on the GPU.
@@ -79,10 +79,9 @@ __global__ void DotProductGPU(float *a, float *b, float *c, int n)
 	int thread = threadIdx.x;
 	int id = threadIdx.x + blockDim.x*blockIdx.x;
 	int temp;
-	\\********************************************
-	int fold =blockDim.x;
-
-	// *************************************************
+	//********************************************
+	int fold =n;
+	
 	if(id <n)
 	{
 		c[id]=a[id]*b[id];
@@ -110,10 +109,6 @@ __global__ void DotProductGPU(float *a, float *b, float *c, int n)
 }
 
 
-
-	\\********************************************
-}
-
 int main()
 {
 	float dotProduct, temp;
@@ -133,13 +128,13 @@ int main()
 
 	//Copy Memory from CPU to GPU		
 	cudaMemcpyAsync(A_GPU, A_CPU, N*sizeof(float), cudaMemcpyHostToDevice);
-	myCudaErrorCheck(__FILE__, __LINE__);
+	ErrorCheck(__FILE__, __LINE__);
 	cudaMemcpyAsync(B_GPU, B_CPU, N*sizeof(float), cudaMemcpyHostToDevice);
-	myCudaErrorCheck(__FILE__, __LINE__);
+	ErrorCheck(__FILE__, __LINE__);
 	
 	//Calling the Kernel (GPU) function.	
 	DotProductGPU<<<GridSize,BlockSize>>>(A_GPU, B_GPU, C_GPU, N);
-	myCudaErrorCheck(__FILE__, __LINE__);
+	ErrorCheck(__FILE__, __LINE__);
 	
 	//Copy Memory from GPU to CPU	
 	dotProduct = 0.0;
@@ -147,7 +142,7 @@ int main()
 	for(int k = 0; k < GridSize.x; k++)
 	{
 		cudaMemcpyAsync(&temp, C_GPU, sizeof(float), cudaMemcpyDeviceToHost);
-		myCudaErrorCheck(__FILE__, __LINE__);
+		ErrorCheck(__FILE__, __LINE__);
 		dotProduct += temp;
 	}
 
