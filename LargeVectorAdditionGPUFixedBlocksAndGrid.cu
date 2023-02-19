@@ -1,21 +1,14 @@
-// nvcc DotProductGPUManyBlocksFinalSumCPU.cu -o temp
+// large Vector addition on the GPU with a fixed number of blocks.
+// nvcc LargeVectorAdditionGPUFixedBlocksAndGrid.cu -o LargeVectorAdditionGPUFixedBlocksAndGrid
 
 #include <sys/time.h>
 #include <stdio.h>
-#include "./MyCuda.h"
 
 //Length of vectors to be added.
-#define N 655350
-
-//Function prototypes
-void SetUpCudaDevices();
-void AllocateMemory();
-void Innitialize();
-void CleanUp();
-__global__ void DotProductGPU(float *, float *, float *, int );
+#define N 217 // ** Don't change this
 
 //Globals
-float *A_CPU, *B_CPU; //CPU pointers
+float *A_CPU, *B_CPU, *C_CPU; //CPU pointers
 float *A_GPU, *B_GPU, *C_GPU; //GPU pointers
 dim3 BlockSize; //This variable will hold the Dimensions of your block
 dim3 GridSize; //This variable will hold the Dimensions of your grid
@@ -23,16 +16,11 @@ dim3 GridSize; //This variable will hold the Dimensions of your grid
 //This will be the layout of the parallel space we will be using.
 void SetUpCudaDevices()
 {
-	BlockSize.x = 1000;
+	BlockSize.x = 4; // ** Don't change this
 	BlockSize.y = 1;
 	BlockSize.z = 1;
 	
-	if(BlockSize.x*65535 < N)
-	{
-		printf("\n Your vector of length %d is too long to work in this code.\n Good Bye\n", BlockSize.x*65535);
-		exit(0);
-	}
-	GridSize.x = (N - 1)/BlockSize.x + 1; //Makes enough blocks to deal with the whole vector.
+	GridSize.x = 5; // ** Don't change this
 	GridSize.y = 1;
 	GridSize.z = 1;
 }
@@ -42,15 +30,13 @@ void AllocateMemory()
 {					
 	//Allocate Device (GPU) Memory
 	cudaMalloc(&A_GPU,N*sizeof(float));
-	ErrorCheck(__FILE__, __LINE__);
 	cudaMalloc(&B_GPU,N*sizeof(float));
-	ErrorCheck(__FILE__, __LINE__);
 	cudaMalloc(&C_GPU,N*sizeof(float));
-	ErrorCheck(__FILE__, __LINE__);
 
 	//Allocate Host (CPU) Memory
 	A_CPU = (float*)malloc(N*sizeof(float));
 	B_CPU = (float*)malloc(N*sizeof(float));
+	C_CPU = (float*)malloc(N*sizeof(float));
 }
 
 //Loads values into vectors that we will add.
@@ -60,58 +46,51 @@ void Innitialize()
 	
 	for(i = 0; i < N; i++)
 	{		
-		A_CPU[i] = (float)1;	
-		B_CPU[i] = 1.0;
+		A_CPU[i] = (float)2*i;	
+		B_CPU[i] = (float)i;
 	}
 }
 
 //Cleaning up memory after we are finished.
 void CleanUp()
 {
-	free(A_CPU); free(B_CPU);
+	free(A_CPU); free(B_CPU); free(C_CPU);
 	cudaFree(A_GPU); cudaFree(B_GPU); cudaFree(C_GPU);
-	ErrorCheck(__FILE__, __LINE__);
 }
 
 //This is the kernel. It is the function that will run on the GPU.
-__global__ void DotProductGPU(float *a, float *b, float *c, int n)
+//It adds vectors A and B then stores result in vector C
+__global__ void AdditionGPU(float *a, float *b, float *c, int n)
 {
-	int thread = threadIdx.x;
-	int id = threadIdx.x + blockDim.x*blockIdx.x;
-	int temp;
-	//********************************************
-	int fold =n;
-	
-	if(id <n)
+	int id = threadIdx.x+ blockDim.x*blockIdx.x;
+	int maX= N/(blockDim.x * gridDim.x) +1 ;
+	for (int count= 0; count < maX ; count++ )
 	{
-		c[id]=a[id]*b[id];
-	}
-	__syncthreads();
-	while (fold>=2)
-	{
-		if(fold%2==1)
+		int inner= count*blockDim.x * gridDim.x +id;
+		if(inner < N)
 		{
-			if(id==blockDim.x*blockIdx.x)
-			{
-				c[blockDim.x*blockIdx.x+0]=c[blockDim.x*blockIdx.x+0]+c[blockDim.x*blockIdx.x+fold-1];
-			}
-		fold--;
-		}	
-
-		if (thread<fold/2)
-		{
-			c[id]=c[id]+c[id+fold/2];
+			c[inner] = a[inner] + b[inner];
 		}
-		fold=fold/2;
-		__syncthreads();
+		
 	}
-	//************************************************
+}
+
+void errorCheck(const char *file, int line)
+{
+	cudaError_t error;
+	error = cudaGetLastError();
+
+	if(error != cudaSuccess)
+	{
+		printf("\n CUDA message = %s, File = %s, Line = %d\n", cudaGetErrorString(error), file, line);
+		exit(0);
+	}
 }
 
 
 int main()
 {
-	float dotProduct, temp;
+	int i;
 	timeval start, end;
 	
 	//Set the thread structure that you will be using on the GPU	
@@ -126,25 +105,19 @@ int main()
 	//Starting the timer
 	gettimeofday(&start, NULL);
 
-	//Copy Memory from CPU to GPU		
+	//Copy Memory from CPU to GPU
 	cudaMemcpyAsync(A_GPU, A_CPU, N*sizeof(float), cudaMemcpyHostToDevice);
-	ErrorCheck(__FILE__, __LINE__);
+	errorCheck(__FILE__, __LINE__);
 	cudaMemcpyAsync(B_GPU, B_CPU, N*sizeof(float), cudaMemcpyHostToDevice);
-	ErrorCheck(__FILE__, __LINE__);
+	errorCheck(__FILE__, __LINE__);
 	
 	//Calling the Kernel (GPU) function.	
-	DotProductGPU<<<GridSize,BlockSize>>>(A_GPU, B_GPU, C_GPU, N);
-	ErrorCheck(__FILE__, __LINE__);
+	AdditionGPU<<<GridSize,BlockSize>>>(A_GPU, B_GPU, C_GPU, N);
+	errorCheck(__FILE__, __LINE__);
 	
 	//Copy Memory from GPU to CPU	
-	dotProduct = 0.0;
-	printf("\n grid size = %d\n", GridSize.x);
-	for(int k = 0; k < GridSize.x; k++)
-	{
-		cudaMemcpyAsync(&temp, C_GPU, sizeof(float), cudaMemcpyDeviceToHost);
-		ErrorCheck(__FILE__, __LINE__);
-		dotProduct += temp;
-	}
+	cudaMemcpyAsync(C_CPU, C_GPU, N*sizeof(float), cudaMemcpyDeviceToHost);
+	errorCheck(__FILE__, __LINE__);
 
 	//Stopping the timer
 	gettimeofday(&end, NULL);
@@ -155,8 +128,15 @@ int main()
 	//Displaying the time 
 	printf("Time in milliseconds= %.15f\n", (time/1000.0));	
 
-	//Displaying the dot product.
-	printf("Dot product = %.15f\n", dotProduct);
+	// Displaying the vector. You will want to comment this out when the vector gets big.
+	// This is just to make sure everything is running correctly.	
+	for(i = 0; i < N; i++)		
+	{		
+		printf("A[%d] = %.15f  B[%d] = %.15f  C[%d] = %.15f\n", i, A_CPU[i], i, B_CPU[i], i, C_CPU[i]);
+	}
+
+	//Displaying the last value of the addition for a check when all vector display has been commented out.
+	printf("Last Values are A[%d] = %.15f  B[%d] = %.15f  C[%d] = %.15f\n", N-1, A_CPU[N-1], N-1, B_CPU[N-1], N-1, C_CPU[N-1]);
 	
 	//You're done so cleanup your mess.
 	CleanUp();	
