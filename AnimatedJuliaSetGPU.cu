@@ -196,7 +196,7 @@ int main(int argc, char** argv)
    	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_RGB | GLUT_SINGLE);
    	glutInitWindowSize(WindowWidth, WindowHeight);
-	Window = glutCreateWindow("Fractals man, fractals");
+	Window = glutCreateWindow("this is what i think i black hole should look like");
 	glutKeyboardFunc(KeyPressed);
    	glutDisplayFunc(display);
 	//glutReshapeFunc(reshape);
