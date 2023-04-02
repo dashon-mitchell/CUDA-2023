@@ -170,7 +170,7 @@ int main()
 		myCudaErrorCheck(__FILE__, __LINE__);
 		cudaMemcpyAsync( B0_GPU, B_CPU+i,DATA_CHUNKS * sizeof(float),cudaMemcpyHostToDevice,Stream0);
 		myCudaErrorCheck(__FILE__, __LINE__);
-		trigAdditionGPU<<<GridSize,BlockSize,0,Stream0>>>( A_CPU,B_CPU, C_CPU, DATA_CHUNKS);
+		trigAdditionGPU<<<GridSize,BlockSize,0,Stream0>>>( A0_GPU,B0_GPU, C0_GPU, DATA_CHUNKS);
 		cudaMemcpyAsync( C_CPU+i, C0_GPU,DATA_CHUNKS * sizeof(float),cudaMemcpyDeviceToHost,Stream0);
 		myCudaErrorCheck(__FILE__, __LINE__);
 		
@@ -178,7 +178,7 @@ int main()
 		myCudaErrorCheck(__FILE__, __LINE__);
 		cudaMemcpyAsync( B1_GPU, B_CPU+i+DATA_CHUNKS ,DATA_CHUNKS * sizeof(float),cudaMemcpyHostToDevice,Stream1);
 		myCudaErrorCheck(__FILE__, __LINE__);
-		trigAdditionGPU<<<GridSize,BlockSize,0,Stream0>>>( A_CPU,B_CPU, C_CPU, DATA_CHUNKS);
+		trigAdditionGPU<<<GridSize,BlockSize,0,Stream1>>>( A0_GPU,B0_GPU, C0_GPU, DATA_CHUNKS);
 		cudaMemcpyAsync( C_CPU+i+DATA_CHUNKS , C1_GPU,DATA_CHUNKS * sizeof(float),cudaMemcpyDeviceToHost,Stream1);
 		myCudaErrorCheck(__FILE__, __LINE__);
 		//******************************************
