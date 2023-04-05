@@ -206,7 +206,7 @@ void get_forces()
 				r2 = dx*dx + dy*dy + dz*dz;
 				r = sqrt(r2);
 
-				forceMag =  Sphere[i+1].mass*Sphere[i].mass*GRAVITY/r2;
+				forceMag =  Sphere[j].mass*Sphere[i].mass*GRAVITY/r2;
 						
 				if (r < DIAMETER)
 				{
