@@ -49,9 +49,6 @@ void set()
 {
 	for(int i = 0; i < NUMSPHERES; i++)
 	{
-		Sphere[i].vx=0;
-		Sphere[i].vy=0;
-		Sphere[i].vz=0;
 		Sphere[i].fx=0;
 		Sphere[i].fy=0;
 		Sphere[i].fz=0;
@@ -195,7 +192,7 @@ void get_forces()
 	int j0=1;
 	int j=1;
 	float dx,dy,dz,r,r2,dvx,dvy,dvz,forceMag,inout;
-	for(int i = 0; i < NUMSPHERES-1; i++)
+	for(int i = 0; i < NUMSPHERES; i++)
 	{
 		int j=j0;
 		while(j<=NUMSPHERES)
