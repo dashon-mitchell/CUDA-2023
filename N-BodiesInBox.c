@@ -14,15 +14,15 @@
 #define STOP_TIME 10000.0
 #define DT        0.0001
 
-#define GRAVITY 0.1 
+#define GRAVITY 0.1
 
 #define MASS 10.0  	
 #define DIAMETER 1.0
 
 #define SPRING_STRENGTH 50.0
-#define SPRING_REDUCTION 0.01
+#define SPRING_REDUCTION 0.0001
 
-#define DAMP 0.0
+#define DAMP 0.5
 
 #define DRAW 10
 
@@ -42,6 +42,7 @@ struct SphereStruct // Structure declaration
 	float px,py,pz;  // sphere position
 	float vx,vy,vz; // sphere velocity
 	float fx,fy,fz; // sphere forces
+	float r,g,b;
 	float mass;
 };
 struct SphereStruct *Sphere;
@@ -72,7 +73,10 @@ void set_initail_conditions()
 		Sphere[i].vx = 2.0*MAX_VELOCITY*rand()/RAND_MAX - MAX_VELOCITY;
 		Sphere[i].vy = 2.0*MAX_VELOCITY*rand()/RAND_MAX - MAX_VELOCITY;
 		Sphere[i].vz = 2.0*MAX_VELOCITY*rand()/RAND_MAX - MAX_VELOCITY;
-		Sphere[i].mass=1.0;
+		Sphere[i].mass=MASS;
+		Sphere[i].r=1.0*rand()/RAND_MAX;
+		Sphere[i].g=0.5*rand()/RAND_MAX;
+		Sphere[i].b=1.0*rand()/RAND_MAX;
 		
 		yeahBuddy = 0;
 		while(yeahBuddy == 0  && i!=0)
@@ -137,7 +141,7 @@ void draw_picture()
 	Drawwirebox();
 	for(int i = 0; i < NUMSPHERES; i++)
 	{
-		glColor3d(1.0,0.5,1.0);
+		glColor3d(Sphere[i].r,Sphere[i].g,Sphere[i].b);
 		glPushMatrix();
 		glTranslatef(Sphere[i].px,Sphere[i].py,Sphere[i].pz);
 		glutSolidSphere(radius,20,20);
@@ -194,7 +198,7 @@ void get_forces()
 	float dx,dy,dz,r,r2,dvx,dvy,dvz,forceMag,inout;
 	for(int i = 0; i < NUMSPHERES; i++)
 	{
-		int j=j0;
+		j=j0;
 		while(j<=NUMSPHERES)
 		{
 			if(i!=j)
